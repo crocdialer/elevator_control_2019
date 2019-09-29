@@ -14,7 +14,7 @@
 
 namespace lora{
 
-#if defined(ARDUINO_FEATHER_M0) || defined(ARDUINO_FEATHER_M4)
+#if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_FEATHER_M4)
 #define CS_PIN 6
 #elif defined(ARDUINO_ITSYBITSY_M0) || defined(ARDUINO_ITSYBITSY_M4)
 #define CS_PIN 7
@@ -41,7 +41,7 @@ struct config_t
     uint8_t address = 0;
 
     // carrier-access detection
-    uint32_t cad_timeout = 10000;
+    uint32_t cad_timeout = 5000;
 };
 
 enum NodeStructType
