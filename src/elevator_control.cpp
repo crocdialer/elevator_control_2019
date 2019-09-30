@@ -293,6 +293,7 @@ void loop()
 
     // frequency blink
     g_blink_accum += delta_time;
+
     float freq = map_value(easeInCubic(g_potis[0]), 0.f, 1.f, .1f, 10.f);
     auto freq_blink_interval = static_cast<uint32_t>(1000.f / freq);
 
