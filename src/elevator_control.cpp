@@ -77,6 +77,10 @@ const uint16_t g_num_poti_samples = 3;
 float g_potis[NUM_POTIS];
 RunningMedian g_poti_median(g_num_poti_samples);
 
+// button
+constexpr uint8_t g_button_pin = 12;
+bool g_button_pressed = false;
+
 // led blinking
 uint32_t g_blink_accum = 0;
 constexpr float g_led_duration = 0.1f;
@@ -91,6 +95,9 @@ uint8_t g_battery_val = 0;
 void parse_line(char *the_line);
 
 template <typename T> void process_input(T& the_device);
+
+// easing helper
+inline float easeInCubic(float t){ return t * t * t; }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -141,10 +148,10 @@ bool lora_send_status()
     elevator = {};
     elevator.battery = g_battery_val;
     elevator.touch_status = g_touch_buffer[0];
-    elevator.intensity = 255 * g_potis[0];
+    elevator.intensity = 255 * easeInCubic(g_potis[0]);
     elevator.velocity = 255 * g_potis[1];
 
-    // g_max_accel_val = 0;
+    g_button_pressed = false;
     g_touch_buffer[0] = 0;
 
     // checksum
@@ -178,6 +185,9 @@ void setup()
 {
     // drives our status LED
     pinMode(13, OUTPUT);
+
+    // pullup style button
+    pinMode(g_button_pin, INPUT_PULLUP);
 
     // indicate "not ready"
     digitalWrite(13, HIGH);
@@ -268,6 +278,9 @@ void loop()
         g_touch_buffer[i] |= touch_states;
     }
 
+    // button
+    g_button_pressed = g_button_pressed && !digitalRead(g_button_pin);
+
     // read potis
     for(size_t i = 0; i < NUM_POTIS; i++)
     {
@@ -280,7 +293,7 @@ void loop()
 
     // frequency blink
     g_blink_accum += delta_time;
-    float freq = map_value(g_potis[0], 0.f, 1.f, .1f, 10.f);
+    float freq = map_value(easeInCubic(g_potis[0]), 0.f, 1.f, .1f, 10.f);
     auto freq_blink_interval = static_cast<uint32_t>(1000.f / freq);
 
     if(g_blink_accum >= freq_blink_interval)
