@@ -146,7 +146,7 @@ bool lora_send_status()
 
     elevator_t &elevator = *(elevator_t*)data;
     elevator = {};
-    elevator.battery = g_battery_val;
+    elevator.button = g_button_pressed;
     elevator.touch_status = g_touch_buffer[0];
     elevator.intensity = 255 * easeInCubic(g_potis[0]);
     elevator.velocity = 255 * g_potis[1];
@@ -226,6 +226,7 @@ void setup()
         float voltage = 3.3f * (float)raw_bat_measure * voltage_divider / (float)ADC_MAX;
         g_battery_val = static_cast<uint8_t>(map_value<float>(voltage, 3.3f, 4.2f, 0.f, 255.f));
         // Serial.printf("battery: %d%%\n", 100 * g_battery_val / 255);
+        Serial.printf("raw_bat_measure: %d\n", raw_bat_measure);
     });
     g_timer[TIMER_BATTERY_MEASURE].set_periodic();
     g_timer[TIMER_BATTERY_MEASURE].expires_from_now(10.f);
@@ -279,7 +280,7 @@ void loop()
     }
 
     // button
-    g_button_pressed = g_button_pressed && !digitalRead(g_button_pin);
+    g_button_pressed = g_button_pressed || !digitalRead(g_button_pin);
 
     // read potis
     for(size_t i = 0; i < NUM_POTIS; i++)
