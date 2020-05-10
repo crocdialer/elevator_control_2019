@@ -137,38 +137,20 @@ void lora_receive()
     }
 }
 
-bool lora_send_status()
+template<typename T> bool lora_send_status(const T &data)
 {
-    bool ret = false;
-    constexpr size_t num_bytes = sizeof(elevator_t) + 1;
+    // data + checksum
+    constexpr size_t num_bytes = sizeof(T) + 1;
 
-    uint8_t data[num_bytes];
+    uint8_t crc_data[3 + sizeof(T)];
+    crc_data[0] = g_lora_config.address;
+    crc_data[1] = RH_BROADCAST_ADDRESS;
 
-    elevator_t &elevator = *(elevator_t*)data;
-    elevator = {};
-    elevator.button = g_button_pressed;
-    elevator.touch_status = g_touch_buffer[0];
-    elevator.intensity = 255 * easeInCubic(g_potis[0]);
-    elevator.velocity = 255 * g_potis[1];
+    memcpy(crc_data + 2, &data, sizeof(T));
+    crc_data[sizeof(crc_data) - 1] = crc8(crc_data, 2 + sizeof(T));
 
-    g_button_pressed = false;
-    g_touch_buffer[0] = 0;
-
-    // checksum
-    data[num_bytes - 1] = crc8(data, sizeof(elevator_t));
-
-    // send a message to the lora mesh-server
-    if(m_rfm95.manager->sendtoWait(data, num_bytes, RH_BROADCAST_ADDRESS))
-    {
-        // the message has been reliably delivered to the next node.
-        ret = true;
-    }
-    else
-    {
-        // failed to send to next hop
-        Serial.println("lora: could not find a route to destination ...");
-    }
-    return ret;
+    // send a broadcast-message
+    return m_rfm95.manager->sendto(crc_data + 2, num_bytes, RH_BROADCAST_ADDRESS);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -234,7 +216,19 @@ void setup()
     // lora config
     set_address(99);
 
-    g_timer[TIMER_LORA_SEND].set_callback([](){ lora_send_status(); });
+    g_timer[TIMER_LORA_SEND].set_callback([]()
+    {
+        elevator_t elevator = {};
+        elevator.button = g_button_pressed;
+        elevator.touch_status = g_touch_buffer[0];
+        elevator.intensity = 255 * easeInCubic(g_potis[0]);
+        elevator.velocity = 255 * g_potis[1];
+
+        g_button_pressed = false;
+        g_touch_buffer[0] = 0;
+        
+        lora_send_status(elevator);
+    });
     g_timer[TIMER_LORA_SEND].set_periodic();
     g_timer[TIMER_LORA_SEND].expires_from_now(g_lora_send_interval);
 
