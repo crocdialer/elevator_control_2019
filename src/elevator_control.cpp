@@ -10,6 +10,8 @@
 #include "rfm95_config.h"
 #include "NodeTypes.h"
 
+const uint8_t g_lora_address = 123;
+
 // analog-digital-converter (ADC)
 #define ADC_BITS 10
 constexpr uint32_t ADC_MAX = (1 << ADC_BITS) - 1U;
@@ -187,11 +189,11 @@ void setup()
         }
         g_cap_sensors[i].setThresholds(g_thresh_touch, g_thresh_release);
 
-        // set global charge current (0 ... 63uA)
-        g_cap_sensors[i].setChargeCurrentAndTime(63, g_charge_time);
+        // // set global charge current (0 ... 63uA)
+        // g_cap_sensors[i].setChargeCurrentAndTime(63, g_charge_time);
 
-        // enable proximity mode
-        g_cap_sensors[i].setMode(Adafruit_MPR121::PROXI_01);
+        // // enable proximity mode
+        // g_cap_sensors[i].setMode(Adafruit_MPR121::PROXI_01);
 
         g_touch_buffer[i] = 0;
 
@@ -214,7 +216,7 @@ void setup()
     g_timer[TIMER_BATTERY_MEASURE].expires_from_now(10.f);
 
     // lora config
-    set_address(99);
+    set_address(g_lora_address);
 
     g_timer[TIMER_LORA_SEND].set_callback([]()
     {
@@ -385,7 +387,7 @@ void parse_line(char *the_line)
         for(uint8_t i = 0; i < NUM_SENSORS; ++i)
         {
             g_cap_sensors[i].setThresholds(num_buf[0], num_buf[1]);
-            g_cap_sensors[i].setChargeCurrentAndTime(num_buf[2], g_charge_time);
+            // g_cap_sensors[i].setChargeCurrentAndTime(num_buf[2], g_charge_time);
         }
     }
 }
